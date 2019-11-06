@@ -2,8 +2,9 @@ TITLE NAVAL
 .MODEL SMALL
 .STACK 100h
 .DATA
-P1 db "Jogador 1:$"
-P2 db "Jogador 2:$"
+P1 db "Zavala:$"
+P2 db "Budbung:$"
+P3 db "Thephbutr:"
 WELCOME db "Boas Vindas Reiyks, eu os invoquei nesse mundo para testa-los como estrategistas.$"
 WELCOME2 db "Apos seculos de confrontos, Asahi nao tem recursos mais para sustentar essa guerra.$"
 WELCOME3 db "A funcao de voces e acabar com isso, agora! O melhor vence, e toma meu lugar como divindade.$"
@@ -11,20 +12,34 @@ INITRULES db "Agora vamos as regras:$"
 RULES1 db "1. Suas forcas ja estao reduzidas, mas seu General vai ajuda-lo.$"
 RULES2 db "2. Os estrategistas agirao de forma intercalada, cuidado com espioes!$"
 RULES3 db "3. O Desafio acaba quando a frota de um dos lados for destruido.$"
-TRANS db "Quando ambos estiverem prontos, pressione Spacebar.$"
+TRANS db "Quando ambos estiverem prontos, pressionem qualquer tecla para seguirmos.$"
+TRANS2 db "Muito Bem, pelo visto conheceram seus generais, agora colocarei voces no confronto, Que venca o melhor!$"
+TRANS22 db "Pressionem qualquer tecla para seguirmos.$"
 GEN1MSG db "Ola Reiyk! Meu nome e Zavala, e serei seu General.$"
 GEN1MSG2 db "Lembre-se, nos estamos em guerra, e a pessoa que esta no seu lado e seu inimigo, cuidado!$"
 GEN1MSG3 db "Antes do confronto final se iniciar, precisamos posicionar nossos navios.$"
 GEN1MSG4 db "A Frota sera posicionada em quadrantes divididos em 6 linhas e  6colunas.$"
 GEN1MSG5 db "Digite no formato (LETRANUMERO) para dar a ordem, senhor.$"
 GEN1MSG6 db "Posicao invalida, senhor.$"
-GEN2MSG db "Hunpf...Eu, Budbung, Servi a vida inteira para ter que obedecer uma criança...$"
+GEN1MSG7 db "Ja posicionou neste quadrante senhor.$"
+GEN1MSG8 db "Um tiro certeiro!$"
+GEN1MSG9 DB "Nao foi dessa vez senhor.$"
+GEN1MSG10 db "Navio ja afundado senhor.$"
+GEN1MSG11 db "O senhor ja errou nessa posicao!$"
+GEN2MSG db "Hunpf...Eu, Budbung, Servi a vida inteira para ter que obedecer uma crianca...$"
 GEN2MSG2 db "Deixa eu ser claro com voce, se meus homens morrerem por sua causa, eu terei prazer em te matar.$"
 GEN2MSG3 db "O inimigo esta do seu lado, entra presta a atencao seu #$%#&%#!$"
 GEN2MSG4 db "Nossos navios estao posicionados em 6 linhas e 6 colunas.$"
 GEN2MSG5 db "Digite no formato (LETRANUMERO) para dar a ordem. Agora, se vira Espertao.$"
-GEN2MSG6 db "Ta querendo colocar navio na casa da mae?$"
-ORDEM db "Ordem:$"
+GEN2MSG6 db "Esta fora do campo seu inutil!$"
+GEN2MSG7 db "Vai empilhar a minha frota?!$"
+GEN2MSG8 db "Derrubou o filho da @#&%!!!$"
+GEN2MSG9 db "Mira direito caolho!$"
+GEN2MSG10 db "Esse dai ja foi pro inferno!$"
+GEN2MSG11 db "Vai mirar onde ja errou mesmo?!$"
+ORDEM db " Qual a sua ordem:$"
+VITORIA1 db "Reiyk 1 Venceu e se tornou a nova divindade de Asahi!$"
+VITORIA2 db "Reiyk 2 Venceu e se tornou a nova divindade de Asahi!$"
 CP1 db 36 DUP(0)
 CP2 db 36 DUP(0)
 AP1 db 36 DUP(0)
@@ -32,6 +47,8 @@ AP2 db 36 DUP(0)
 POSICAO DB ?
 SETCONT1 db 0
 SETCONT2 db 0
+PRINTCOLUNA db 0
+PRINTLINHA db 0
 LIFE1 db 5
 LIFE2 db 5
 .CODE
@@ -39,6 +56,7 @@ MOV AX, @DATA
 MOV DS,AX
 
 JMP FIMPROC
+
 PRINT PROC
 MOV AH,9
 INT 21H
@@ -46,13 +64,11 @@ RET
 PRINT ENDP
 
 LIMPA_TELA PROC
-	PUSH CX
-	MOV CX,30
-	INICIO_LIMPA_TELA:
-	CALL PULA
-	LOOP INICIO_LIMPA_TELA
-    CALL PULA
-	POP CX
+MOV AX,0003h
+INT 10h
+MOV AX,4f02h
+MOV BX,103h
+INT 10h
 	RET
 LIMPA_TELA ENDP
 
@@ -203,7 +219,8 @@ XOR BX,BX
 MOV BL,POSICAO
 CMP CP1[BX],1
 JNE NAVOK
-LEA DX,GEN1MSG6
+LEA DX,GEN1MSG7
+CALL IMP
 CALL GETORDEM1
 JMP SETNAVIO1INI
 NAVOK:
@@ -217,7 +234,8 @@ XOR BX,BX
 MOV BL,POSICAO
 CMP CP2[BX],1
 JNE NAVOK2
-LEA DX,GEN2MSG6
+LEA DX,GEN2MSG7
+CALL IMP
 CALL GETORDEM2
 JMP SETNAVIO2INI
 NAVOK2:
@@ -225,36 +243,172 @@ MOV CP2[BX],1
 RET
 SETNAVIO2 ENDP
 
+ATK12 PROC
+LEA DX,P1
+CALL PRINT
+CALL GETORDEM1
+XOR BX,BX
+MOV BL,POSICAO
+CMP CP2[BX],1
+JNE ERRO1
+CMP AP1[BX],0
+JNE TESTEATK1
+MOV AP1[BX],1
+DEC LIFE2
+MOV CP2[BX],2
+LEA DX,GEN1MSG8
+CALL IMP
+JMP ATK1FIM
+TESTEATK1:
+CMP AP1[BX],1
+JNE ERRO11
+
+ERRO1:
+LEA DX,GEN1MSG9
+CALL IMP
+JMP ATK1FIM2
+
+ERRO11:
+CMP AP1[BX],2
+JE ERRO12
+LEA DX,GEN1MSG10
+CALL IMP
+MOV AP1[BX],2
+JMP ATK1FIM2
+
+ERRO12:
+LEA DX,GEN1MSG11
+CALL IMP
+JMP ATK1FIM2
+
+ATK1FIM:
+CMP LIFE2,0
+JNE ATK1FIM2
+CALL LIMPA_TELA
+LEA DX,VITORIA1
+CALL IMP
+MOV AH,1
+INT 21H
+MOV AH,4CH
+INT 21H
+ATK1FIM2:
+RET
+ATK12 ENDP
+
+
+ATK21 PROC
+LEA DX,P2
+CALL PRINT
+CALL GETORDEM2
+XOR BX,BX
+MOV BL,POSICAO
+CMP CP1[BX],1
+JNE ERRO2
+CMP AP2[BX],0
+JNE TESTEATK2
+MOV AP2[BX],1
+DEC LIFE1
+MOV CP1[BX],2
+LEA DX,GEN2MSG8
+CALL IMP
+JMP ATK2FIM
+TESTEATK2:
+CMP AP2[BX],1
+JNE ERRO21
+
+ERRO2:
+LEA DX,GEN2MSG9
+CALL IMP
+JMP ATK2FIM2
+
+ERRO21:
+CMP AP2[BX],2
+JE ERRO22
+LEA DX,GEN2MSG10
+CALL IMP
+MOV AP2[BX],2
+JMP ATK2FIM2
+
+ERRO22:
+LEA DX,GEN2MSG11
+CALL IMP
+JMP ATK2FIM2
+
+ATK2FIM:
+CMP LIFE1,0
+JNE ATK2FIM2
+CALL LIMPA_TELA
+LEA DX,VITORIA2
+CALL IMP
+MOV AH,1
+INT 21H
+MOV AH,4CH
+INT 21H
+ATK2FIM2:
+RET
+ATK21 ENDP
+
+PRINTAM1 PROC
+XOR BX,BX
+MOV DL,CP1[BX]
+ADD DL,48
+MOV AH,2
+INT 21H
+RET
+PRINTAM1 ENDP
+
+PRINTAM12 PROC
+XOR BX,BX
+MOV DL,AP1[BX]
+ADD DL,48
+MOV AH,2
+INT 21H
+RET
+PRINTAM12 ENDP
+
+PRINTAM2 PROC
+XOR BX,BX
+MOV DL,CP2[BX]
+ADD DL,48
+MOV AH,2
+INT 21H
+RET
+PRINTAM2 ENDP
+
+PRINTAM22 PROC
+XOR BX,BX
+MOV DL,AP2[BX]
+ADD DL,48
+MOV AH,2
+INT 21H
+RET
+PRINTAM22 ENDP
+
 FIMPROC:
 ;INTRODUÇÃO
-;CALL LIMPA_TELA
+CALL LIMPA_TELA
+LEA DX,P3
+CALL IMP
 LEA DX,WELCOME
 CALL IMP
 LEA DX,WELCOME2
 CALL IMP
 LEA DX,WELCOME3
-CALL IMPMOV AH, 2
-MOV DL, 'd'
-INT 21H
+CALL IMP
 LEA DX,INITRULES
-CALL IMPMOV AH, 2
-MOV DL, 'd'
-INT 21H
+CALL IMP
 LEA DX,RULES1
 CALL IMP
 LEA DX,RULES2
 CALL IMP
 LEA DX,RULES3
-CALL IMPMOV AH, 2
-MOV DL, 'd'
-INT 21H
+CALL IMP
 LEA DX,TRANS
 CALL IMP
-;CALL CONFSPACE
 MOV AH,1
 INT 21H
 ;MONTAGEM JOGADOR 1
-;CALL LIMPA_TELA
+CALL LIMPA_TELA
 LEA DX,P1
 CALL IMP
 LEA DX,GEN1MSG
@@ -273,10 +427,8 @@ CALL SETNAVIO1
 INC SETCONT1
 CMP SETCONT1,5
 JB LOOPSET1
-
-
-
-CALL PULA
+;MONTAGEM JOGADOR 2
+CALL LIMPA_TELA
 LEA DX,P2
 CALL IMP
 LEA DX,GEN2MSG
@@ -294,13 +446,92 @@ CALL PULA
 LOOPSET2:
 CALL GETORDEM2
 CALL SETNAVIO2
-
-
-
 INC SETCONT2
 CMP SETCONT2,5
 JNE LOOPSET2
 
+;TRANSIÇÃO JOGADAS
+CALL LIMPA_TELA
+LEA DX,P3
+CALL IMP
+LEA DX,TRANS2
+CALL IMP
+LEA DX,TRANS22
+CALL IMP
+MOV AH,1
+INT 21H
+CALL LIMPA_TELA
+
+;Fase de ataques
+
+FASEATK:
+CALL LIMPA_TELA
+INITPRINTCOLUNA1:
+CALL PRINTAM1
+INC PRINTCOLUNA
+INC BX
+CMP PRINTCOLUNA,6
+JB INITPRINTCOLUNA1
+MOV PRINTCOLUNA,0
+CALL PULA
+INC PRINTLINHA
+CMP PRINTLINHA,6
+JB INITPRINTCOLUNA1
+
+CALL PULA
+
+MOV PRINTCOLUNA,0
+MOV PRINTLINHA,0
+
+INITPRINTCOLUNA12:
+CALL PRINTAM12
+INC PRINTCOLUNA
+INC BX
+CMP PRINTCOLUNA,6
+JB INITPRINTCOLUNA12
+MOV PRINTCOLUNA,0
+CALL PULA
+INC PRINTLINHA
+CMP PRINTLINHA,6
+JB INITPRINTCOLUNA12
+
+
+CALL ATK12
+CALL LIMPA_TELA
+
+MOV PRINTCOLUNA,0
+MOV PRINTLINHA,0
+INITPRINTCOLUNA21:
+CALL PRINTAM2
+INC PRINTCOLUNA
+INC BX
+CMP PRINTCOLUNA,6
+JB INITPRINTCOLUNA21
+CALL PULA
+MOV PRINTCOLUNA,0
+INC PRINTLINHA
+CMP PRINTLINHA,6
+JB INITPRINTCOLUNA21
+CALL PULA
+
+MOV PRINTCOLUNA,0
+MOV PRINTLINHA,0
+
+INITPRINTCOLUNA22:
+CALL PRINTAM22
+INC BX
+INC PRINTCOLUNA
+CMP PRINTCOLUNA,6
+JB INITPRINTCOLUNA22
+MOV PRINTCOLUNA,0
+CALL PULA
+INC PRINTLINHA
+CMP PRINTLINHA,6
+JB INITPRINTCOLUNA22
+CALL PULA
+
+CALL ATK21
+JMP FASEATK
 
 FIM:
 MOV AH,4CH

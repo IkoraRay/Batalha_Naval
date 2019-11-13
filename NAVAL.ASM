@@ -1,3 +1,5 @@
+;Luís Marcelo Stein d'Avila RA-	18125955
+;Beatriz Meloni Meneghetti RA-18079053
 TITLE NAVAL
 .MODEL SMALL
 .STACK 100h

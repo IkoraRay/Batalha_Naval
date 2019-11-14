@@ -1,3 +1,5 @@
+;Luís Marcelo Stein d'Avila RA-	18125955
+;Beatriz Meloni Meneghetti RA-18079053
 TITLE NAVAL
 .MODEL SMALL
 .STACK 100h
@@ -25,7 +27,7 @@ TRANS22 db "Pressionem qualquer tecla para seguirmos.$"
 GEN1MSG db "Ola Reiyk! Meu nome e Zavala dos Mongtriis, e serei seu General.$"
 GEN1MSG2 db "Lembre-se, nos estamos em guerra, e a pessoa que esta no seu lado e seu inimigo, cuidado!$"
 GEN1MSG3 db "Antes do confronto final se iniciar, precisamos posicionar nossos navios.$"
-GEN1MSG4 db "A Frota sera posicionada em quadrantes divididos em 6 linhas e  6colunas.$"
+GEN1MSG4 db "A Frota sera posicionada em quadrantes divididos em 6 linhas e  6 colunas.$"
 GEN1MSG5 db "Digite no formato (LETRANUMERO) para dar a ordem, senhor.$"
 GEN1MSG6 db "Posicao invalida, senhor.$"
 GEN1MSG7 db "Ja posicionou neste quadrante senhor.$"
@@ -118,6 +120,9 @@ PRINTLINHA db 0
 ;Vidas dos jogadores
 LIFE1 db 5
 LIFE2 db 5
+
+;confirmação de acerto
+CONFIRMA db ?
 .CODE
 ;Inicialização de textos
 MOV AX, @DATA
@@ -374,6 +379,7 @@ CMP AP1[BX],0
 JNE TESTEATK1
 MOV AP1[BX],2
 DEC LIFE2
+MOV CONFIRMA,1
 MOV CP2[BX],2
 CALL PULA
 LEA DX,GEN1MSG8
@@ -389,10 +395,12 @@ CALL PULA
 LEA DX,GEN1MSG9
 CALL IMP
 MOV AP1[BX],3
+MOV CONFIRMA,0
 JMP ATK1FIM2
 
 ERRO11:
 
+MOV CONFIRMA,0
 CALL PULA
 LEA DX,GEN1MSG10
 CALL IMP
@@ -423,6 +431,7 @@ CMP AP2[BX],0
 JNE TESTEATK2
 MOV AP2[BX],2
 DEC LIFE1
+MOV CONFIRMA,1
 MOV CP1[BX],2
 CALL PULA
 LEA DX,GEN2MSG8
@@ -438,9 +447,11 @@ CALL PULA
 LEA DX,GEN2MSG9
 CALL IMP
 MOV AP2[BX],3
+MOV CONFIRMA,0
 JMP ATK2FIM2
 
 ERRO21:
+MOV CONFIRMA,0
 CALL PULA
 LEA DX,GEN2MSG10
 CALL IMP
@@ -531,6 +542,8 @@ FIM2 ENDP
 
 ;Imprime as Strings de história do jogador 1
 CONTAHISTORIA1 PROC
+CMP CONFIRMA,1
+JNE PROX14
 CMP LIFE2,4
 JNE PROX11
 CALL LIMPA_TELA
@@ -568,6 +581,8 @@ CONTAHISTORIA1 ENDP
 
 ;Imprime as Strings de história do jogador 2
 CONTAHISTORIA2 PROC
+CMP CONFIRMA,1
+JNE PROX24
 CMP LIFE1,4
 JNE PROX21
 CALL LIMPA_TELA
